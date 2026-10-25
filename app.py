@@ -120,27 +120,19 @@ if 'selected_class' in locals() and classes:
                 encoded_pdf = urllib.parse.quote(selected_pdf)
                 pdf_url = f"https://raw.githubusercontent.com/nanghemars/Kho-de-toan/main/{encoded_class}/{encoded_pdf}"
                 
-                # --- NÚT MỞ TOÀN MÀN HÌNH (RẤT TIỆN CHO ĐIỆN THOẠI ĐỂ ZOOM TO/NHỎ) ---
+                # --- NÚT MỞ TOÀN MÀN HÌNH TỐI ƯU CHO ĐIỆN THOẠI ---
                 st.markdown(
                     f'''
-                    <div style="margin-bottom: 15px;">
-                        <a href="{pdf_url}" target="_blank" style="display: block; text-align: center; background-color: #2e7d32; color: white; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; box-shadow: 0px 2px 4px rgba(0,0,0,0.2);">
-                            🔍 Mở đề thi toàn màn hình (Để phóng to/thu nhỏ thoải mái trên điện thoại)
+                    <div style="text-align: center; padding: 20px; background-color: #f1f8e9; border: 2px dashed #2e7d32; border-radius: 12px; margin-top: 10px;">
+                        <h3 style="color: #1b5e20; margin-bottom: 15px;">📱 Xem đề thi chi tiết trên điện thoại</h3>
+                        <a href="{pdf_url}" target="_blank" style="display: inline-block; background-color: #2e7d32; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 17px; box-shadow: 0px 4px 6px rgba(0,0,0,0.15);">
+                            🔍 Bấm vào đây để mở và phóng to/thu nhỏ đề thi
                         </a>
+                        <p style="color: #555; font-size: 14px; margin-top: 12px;">(Mở ra tab riêng giúp học sinh dùng 2 ngón tay zoom to/nhỏ sắc nét từng câu hỏi)</p>
                     </div>
                     ''',
                     unsafe_allow_html=True
                 )
-                
-                # Trình xem trực tuyến trên máy tính và tablet
-                google_viewer_url = f"https://docs.google.com/viewer?url={urllib.parse.quote(pdf_url)}&embedded=true"
-                
-                pdf_display = f'''
-                    <div style="width: 100%; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; overflow: hidden;">
-                        <iframe src="{google_viewer_url}" width="100%" height="850px" style="border: none;"></iframe>
-                    </div>
-                '''
-                st.markdown(pdf_display, unsafe_allow_html=True)
         else:
             st.info(f"📂 Thư mục **{selected_class}** hiện chưa có file PDF nào.")
 else:
