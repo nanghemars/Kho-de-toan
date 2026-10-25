@@ -115,14 +115,17 @@ if 'selected_class' in locals() and classes:
                 
                 st.markdown("---")
                 
-                # --- SỬ DỤNG ĐƯỜNG DẪN TRỰC TIẾP RAW GITHUB ĐỂ TRÁNH BỊ CHROME CHẶN ---
+                # --- DÙNG TRÌNH XEM TRỰC TUYẾN ĐỂ HIỂN THỊ NỘI DUNG NGAY TRÊN WEB ---
                 encoded_class = urllib.parse.quote(selected_class)
                 encoded_pdf = urllib.parse.quote(selected_pdf)
                 pdf_url = f"https://raw.githubusercontent.com/nanghemars/Kho-de-toan/main/{encoded_class}/{encoded_pdf}"
                 
+                # Bọc qua Google Docs Viewer để hiển thị trực tiếp mượt mà
+                google_viewer_url = f"https://docs.google.com/viewer?url={urllib.parse.quote(pdf_url)}&embedded=true"
+                
                 pdf_display = f'''
                     <div style="width: 100%; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; overflow: hidden;">
-                        <iframe src="{pdf_url}#view=FitH" width="100%" height="850px" type="application/pdf" style="border: none;"></iframe>
+                        <iframe src="{google_viewer_url}" width="100%" height="850px" style="border: none;"></iframe>
                     </div>
                 '''
                 st.markdown(pdf_display, unsafe_allow_html=True)
