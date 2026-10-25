@@ -115,12 +115,24 @@ if 'selected_class' in locals() and classes:
                 
                 st.markdown("---")
                 
-                # --- DÙNG TRÌNH XEM TRỰC TUYẾN ĐỂ HIỂN THỊ NỘI DUNG NGAY TRÊN WEB ---
+                # Tạo link trực tiếp GitHub Raw
                 encoded_class = urllib.parse.quote(selected_class)
                 encoded_pdf = urllib.parse.quote(selected_pdf)
                 pdf_url = f"https://raw.githubusercontent.com/nanghemars/Kho-de-toan/main/{encoded_class}/{encoded_pdf}"
                 
-                # Bọc qua Google Docs Viewer để hiển thị trực tiếp mượt mà
+                # --- NÚT MỞ TOÀN MÀN HÌNH (RẤT TIỆN CHO ĐIỆN THOẠI ĐỂ ZOOM TO/NHỎ) ---
+                st.markdown(
+                    f'''
+                    <div style="margin-bottom: 15px;">
+                        <a href="{pdf_url}" target="_blank" style="display: block; text-align: center; background-color: #2e7d32; color: white; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; box-shadow: 0px 2px 4px rgba(0,0,0,0.2);">
+                            🔍 Mở đề thi toàn màn hình (Để phóng to/thu nhỏ thoải mái trên điện thoại)
+                        </a>
+                    </div>
+                    ''',
+                    unsafe_allow_html=True
+                )
+                
+                # Trình xem trực tuyến trên máy tính và tablet
                 google_viewer_url = f"https://docs.google.com/viewer?url={urllib.parse.quote(pdf_url)}&embedded=true"
                 
                 pdf_display = f'''
