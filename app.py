@@ -1,5 +1,6 @@
 import os
 import streamlit as st
+import urllib.parse
 import base64
 
 # Cấu hình trang rộng
@@ -114,13 +115,14 @@ if 'selected_class' in locals() and classes:
                 
                 st.markdown("---")
                 
-                # Hiển thị PDF cố định chiều cao chuẩn, tự động căn vừa ngang màn hình điện thoại
-                with open(file_path, "rb") as pdf_file:
-                    base64_pdf = base64.b64encode(pdf_file.read()).decode('utf-8')
+                # --- SỬ DỤNG ĐƯỜNG DẪN TRỰC TIẾP RAW GITHUB ĐỂ TRÁNH BỊ CHROME CHẶN ---
+                encoded_class = urllib.parse.quote(selected_class)
+                encoded_pdf = urllib.parse.quote(selected_pdf)
+                pdf_url = f"https://raw.githubusercontent.com/nanghemars/Kho-de-toan/main/{encoded_class}/{encoded_pdf}"
                 
                 pdf_display = f'''
                     <div style="width: 100%; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; overflow: hidden;">
-                        <iframe src="data:application/pdf;base64,{base64_pdf}#view=FitH" width="100%" height="850px" type="application/pdf" style="border: none;"></iframe>
+                        <iframe src="{pdf_url}#view=FitH" width="100%" height="850px" type="application/pdf" style="border: none;"></iframe>
                     </div>
                 '''
                 st.markdown(pdf_display, unsafe_allow_html=True)
