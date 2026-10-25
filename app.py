@@ -1,7 +1,7 @@
 import os
 import streamlit as st
-import urllib.parse
 import base64
+import fitz  # PyMuPDF giúp chuyển trang PDF thành ảnh để zoom 2 ngón tay cực mượt trên điện thoại
 
 # Cấu hình trang rộng
 st.set_page_config(page_title="Top Giáo Dục - Lớp Toán Thầy Lộc", layout="wide")
@@ -114,25 +114,22 @@ if 'selected_class' in locals() and classes:
                         )
                 
                 st.markdown("---")
+                st.info("💡 **Mẹo cho học sinh:** Trên điện thoại, các em có thể dùng **2 ngón tay để phóng to/thu nhỏ (pinch-to-zoom)** trực tiếp vào từng câu hỏi trên trang đề một cách cực kỳ sắc nét!")
                 
-                # Tạo link trực tiếp GitHub Raw
-                encoded_class = urllib.parse.quote(selected_class)
-                encoded_pdf = urllib.parse.quote(selected_pdf)
-                pdf_url = f"https://raw.githubusercontent.com/nanghemars/Kho-de-toan/main/{encoded_class}/{encoded_pdf}"
-                
-                # --- NÚT MỞ TOÀN MÀN HÌNH TỐI ƯU CHO ĐIỆN THOẠI ---
-                st.markdown(
-                    f'''
-                    <div style="text-align: center; padding: 20px; background-color: #f1f8e9; border: 2px dashed #2e7d32; border-radius: 12px; margin-top: 10px;">
-                        <h3 style="color: #1b5e20; margin-bottom: 15px;">📱 Xem đề thi chi tiết trên điện thoại</h3>
-                        <a href="{pdf_url}" target="_blank" style="display: inline-block; background-color: #2e7d32; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 17px; box-shadow: 0px 4px 6px rgba(0,0,0,0.15);">
-                            🔍 Bấm vào đây để mở và phóng to/thu nhỏ đề thi
-                        </a>
-                        <p style="color: #555; font-size: 14px; margin-top: 12px;">(Mở ra tab riêng giúp học sinh dùng 2 ngón tay zoom to/nhỏ sắc nét từng câu hỏi)</p>
-                    </div>
-                    ''',
-                    unsafe_allow_html=True
-                )
+                # --- ĐỌC VÀ HIỂN THỊ TỪNG TRANG PDF DƯỚI DẠNG ẢNH ---
+                try:
+                    doc = fitz.open(file_path)
+                    for page_index in range(len(doc)):
+                        page = doc[page_index]
+                        # Render trang PDF thành ảnh độ phân giải cao để chữ cực kỳ sắc nét khi zoom
+                        pix = page.get_pixmap(dpi=150)
+                        img_bytes = pix.tobytes("png")
+                        
+                        # Hiển thị ảnh trang đề thi
+                        st.image(img_bytes, use_container_width=True)
+                        st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
+                except Exception as e:
+                    st.error(f"Không thể hiển thị file PDF: {e}")
         else:
             st.info(f"📂 Thư mục **{selected_class}** hiện chưa có file PDF nào.")
 else:
