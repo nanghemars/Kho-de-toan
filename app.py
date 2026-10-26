@@ -61,7 +61,7 @@ st.markdown("""
         .nav-link-custom {
             display: block;
             padding: 12px 18px;
-            color: #ffffff !important; /* Màu chữ trắng sáng để dễ đọc, không bị chìm */
+            color: #ffffff !important; /* Màu chữ trắng sáng để dễ đọc */
             text-decoration: none;
             font-weight: bold;
             font-size: 15px;
@@ -77,7 +77,7 @@ st.markdown("""
         .nav-link-custom.active {
             background-color: #2e7d32 !important;
             color: #ffffff !important;
-            border-bottom: 3px solid #ffeb3b; /* Viền vàng nổi bật giúp nhận biết ngay */
+            border-bottom: 3px solid #ffeb3b; /* Viền vàng nổi bật */
         }
 
         /* Khung ô chọn đề nổi bật */
@@ -145,11 +145,11 @@ with st.sidebar:
 
 # ==================== KHU VỰC CHÍNH BÊN PHẢI ====================
 if classes:
-    # --- THANH MENU NGANG SẮP XẾP TỪ LỚP 6 ĐẾN 12 ---
+    # --- THANH MENU NGANG (ĐÃ THÊM target="_self" ĐỂ MỞ TRÊN CÙNG 1 TAB) ---
     nav_html = '<nav class="top-nav"><ul class="nav-list">'
     for cls in classes:
         active_class = "active" if st.session_state.selected_class == cls else ""
-        nav_html += f'<li><a href="?class={urllib.parse.quote(cls)}" class="nav-link-custom {active_class}">📚 {cls}</a></li>'
+        nav_html += f'<li><a href="?class={urllib.parse.quote(cls)}" target="_self" class="nav-link-custom {active_class}">📚 {cls}</a></li>'
     nav_html += '</ul></nav>'
     st.markdown(nav_html, unsafe_allow_html=True)
 
