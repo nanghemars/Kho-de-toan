@@ -6,9 +6,46 @@ import base64
 # Cấu hình trang rộng
 st.set_page_config(page_title="Top Giáo Dục - Lớp Toán Thầy Lộc", layout="wide")
 
-# --- MÃ CSS TÙY CHỈNH: LOGO, KHUNG CHỌN ĐỀ VÀ MŨI TÊN ---
+# --- MÃ CSS TÙY CHỈNH: MENU NGANG TOANMATH & GIAO DIỆN ---
 st.markdown("""
     <style>
+        /* Ẩn header mặc định của Streamlit nếu muốn gọn hơn (tùy chọn) */
+        .main .block-container {
+            padding-top: 1rem;
+        }
+        
+        /* Thanh Menu Ngang phong cách TOANMATH */
+        .top-nav {
+            background-color: #222222;
+            border-radius: 8px;
+            padding: 0 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .nav-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .nav-link-custom {
+            display: block;
+            padding: 12px 20px;
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 15px;
+            text-transform: uppercase;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        .nav-link-custom:hover, .nav-link-custom.active {
+            background-color: #e53935;
+            color: #ffffff;
+        }
+
         /* Khung ô chọn đề nổi bật */
         div[data-testid="stSelectbox"] > div {
             border: 2px solid #2e7d32 !important;
@@ -16,7 +53,6 @@ st.markdown("""
             background-color: #f1f8e9 !important;
             box-shadow: 0px 3px 6px rgba(0,0,0,0.05) !important;
         }
-        /* Phóng to và đổi màu mũi tên */
         div[data-testid="stSelectbox"] svg {
             fill: #1b5e20 !important;
             width: 22px !important;
@@ -32,11 +68,22 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ==================== THANH BÊN (SIDEBAR) ====================
+# Lấy đường dẫn thư mục hiện tại
+current_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in locals() else "."
+ROOT_DIR = current_dir
+
+# Quét danh sách các lớp từ thư mục
+classes = []
+if os.path.exists(ROOT_DIR):
+    classes = sorted([f for f in os.listdir(ROOT_DIR) if os.path.isdir(os.path.join(ROOT_DIR, f)) and not f.startswith('.') and f != "__pycache__"])
+
+# Xử lý trạng thái lớp đang chọn thông qua query params hoặc session_state
+if "selected_class" not in st.session_state:
+    st.session_state.selected_class = classes[0] if classes else ""
+
+# ==================== THANH BÊN (SIDEBAR - DÙNG ĐỂ UPLOAD & LOGO) ====================
 with st.sidebar:
-    current_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in locals() else "."
-    
-    # --- TỰ ĐỘNG TÌM VÀ XÓA NỀN TRẮNG LOGO (MIX-BLEND-MODE) ---
+    # --- TỰ ĐỘNG TÌM VÀ XÓA NỀN TRẮNG LOGO ---
     logo_path = None
     for file in os.listdir(current_dir):
         if file.lower().startswith("logo"):
@@ -58,40 +105,52 @@ with st.sidebar:
         st.warning("⚠️ Không tìm thấy file logo bắt đầu bằng chữ 'logo'.")
     
     st.markdown("---")
-    st.markdown("### 📁 Danh Mục Lớp")
-    
-    ROOT_DIR = current_dir 
-    
-    if os.path.exists(ROOT_DIR):
-        classes = sorted([f for f in os.listdir(ROOT_DIR) if os.path.isdir(os.path.join(ROOT_DIR, f)) and not f.startswith('.') and f != "__pycache__"])
+    st.markdown("### 📥 Thêm tài liệu mới")
+    if classes:
+        st.write("Chọn lớp muốn đưa file vào:")
+        upload_class = st.selectbox("Chọn lớp upload", classes, key="up_class", label_visibility="collapsed")
         
-        if classes:
-            selected_class = st.selectbox("Chọn lớp", classes, label_visibility="collapsed")
-            
-            st.markdown("---")
-            st.markdown("### 📥 Thêm tài liệu mới")
-            st.write("Chọn lớp muốn đưa file vào:")
-            upload_class = st.selectbox("Chọn lớp upload", classes, key="up_class", label_visibility="collapsed")
-            
-            uploaded_file = st.file_uploader("Chọn file từ máy tính:", type=['pdf', 'docx', 'pptx'], label_visibility="collapsed")
-            
-            if uploaded_file is not None:
-                upload_path = os.path.join(ROOT_DIR, upload_class)
-                if not os.path.exists(upload_path):
-                    os.makedirs(upload_path)
-                with open(os.path.join(upload_path, uploaded_file.name), "wb") as f:
-                    f.write(uploaded_file.getbuffer())
-                st.success(f"Đã tải lên: {uploaded_file.name}")
-                st.rerun()
+        uploaded_file = st.file_uploader("Chọn file từ máy tính:", type=['pdf', 'docx', 'pptx'], label_visibility="collapsed")
+        
+        if uploaded_file is not None:
+            upload_path = os.path.join(ROOT_DIR, upload_class)
+            if not os.path.exists(upload_path):
+                os.makedirs(upload_path)
+            with open(os.path.join(upload_path, uploaded_file.name), "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            st.success(f"Đã tải lên: {uploaded_file.name}")
+            st.rerun()
+    else:
+        st.info("Chưa có thư mục lớp học nào trong hệ thống.")
 
 # ==================== KHU VỰC CHÍNH BÊN PHẢI ====================
-if 'selected_class' in locals() and classes:
+if classes:
+    # --- THANH MENU NGANG CHỌN LỚP (GIỐNG TOANMATH) ---
+    nav_html = '<nav class="top-nav"><ul class="nav-list">'
+    for cls in classes:
+        active_class = "active" if st.session_state.selected_class == cls else ""
+        nav_html += f'<li><a href="?class={urllib.parse.quote(cls)}" class="nav-link-custom {active_class}">📚 {cls}</a></li>'
+    nav_html += '</ul></nav>'
+    st.markdown(nav_html, unsafe_allow_html=True)
+
+    # Đọc lại lớp được chọn từ URL hoặc session state
+    query_params = st.query_params
+    if "class" in query_params:
+        requested_class = query_params["class"]
+        if requested_class in classes:
+            st.session_state.selected_class = requested_class
+
+    selected_class = st.session_state.selected_class
+    if not selected_class or selected_class not in classes:
+        selected_class = classes[0]
+        st.session_state.selected_class = selected_class
+
     class_path = os.path.join(ROOT_DIR, selected_class)
     if os.path.exists(class_path):
         pdf_files = sorted([f for f in os.listdir(class_path) if f.lower().endswith('.pdf')])
         
         if pdf_files:
-            st.markdown(f"## 📚 Kho Tài Liệu & Đề Thi - {selected_class}")
+            st.markdown(f"## 📄 Kho Tài Liệu & Đề Thi - {selected_class}")
             st.markdown("---")
             
             col1, col2 = st.columns([3, 1])
@@ -120,7 +179,7 @@ if 'selected_class' in locals() and classes:
                 encoded_pdf = urllib.parse.quote(selected_pdf)
                 pdf_url = f"https://raw.githubusercontent.com/nanghemars/Kho-de-toan/main/{encoded_class}/{encoded_pdf}"
                 
-                # --- SỬ DỤNG TRÌNH XEM PDF.JS (HỖ TRỢ ZOOM, TRƯỢT, XEM TRỰC TIẾP CỰC KỲ MƯỢT MÀ) ---
+                # --- TRÌNH XEM PDF.JS ---
                 pdfjs_url = f"https://mozilla.github.io/pdf.js/web/viewer.html?file={urllib.parse.quote(pdf_url)}"
                 
                 pdf_display = f'''
@@ -132,4 +191,4 @@ if 'selected_class' in locals() and classes:
         else:
             st.info(f"📂 Thư mục **{selected_class}** hiện chưa có file PDF nào.")
 else:
-    st.warning("⚠️ Chưa tìm thấy thư mục lớp học nào.")
+    st.warning("⚠️ Chưa tìm thấy thư mục lớp học nào trong hệ thống.")
