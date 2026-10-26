@@ -2,6 +2,7 @@ import os
 import streamlit as st
 import urllib.parse
 import base64
+import re
 
 # Cấu hình trang rộng
 st.set_page_config(page_title="Top Giáo Dục - Lớp Toán Thầy Lộc", layout="wide")
@@ -10,12 +11,18 @@ st.set_page_config(page_title="Top Giáo Dục - Lớp Toán Thầy Lộc", layo
 current_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in locals() else "."
 ROOT_DIR = current_dir
 
-# Quét danh sách các lớp từ thư mục
+# Hàm hỗ trợ sắp xếp tên lớp theo đúng thứ tự số (6, 7, 8, 9, 10, 11, 12)
+def sort_class_key(class_name):
+    match = re.search(r'\d+', class_name)
+    return int(match.group()) if match else 999
+
+# Quét danh sách các lớp và sắp xếp từ lớp 6 đến lớp 12
 classes = []
 if os.path.exists(ROOT_DIR):
-    classes = sorted([f for f in os.listdir(ROOT_DIR) if os.path.isdir(os.path.join(ROOT_DIR, f)) and not f.startswith('.') and f != "__pycache__"])
+    raw_classes = [f for f in os.listdir(ROOT_DIR) if os.path.isdir(os.path.join(ROOT_DIR, f)) and not f.startswith('.') and f != "__pycache__"]
+    classes = sorted(raw_classes, key=sort_class_key)
 
-# --- 1. XỬ LÝ QUERY PARAMS NGAY TỪ ĐẦU ĐỂ CẬP NHẬT ĐÚNG LỚP ĐANG CHỌN ---
+# --- XỬ LÝ QUERY PARAMS CHO LỚP ĐANG CHỌN ---
 if "selected_class" not in st.session_state:
     st.session_state.selected_class = classes[0] if classes else ""
 
@@ -28,14 +35,14 @@ if "class" in query_params:
 if not st.session_state.selected_class and classes:
     st.session_state.selected_class = classes[0]
 
-# --- MÃ CSS TÙY CHỈNH: ĐỒNG BỘ MÀU XANH LÁ CHỦ ĐẠO & ACTIVE CHUẨN ---
+# --- MÃ CSS: ĐỔI MÀU CHỮ TRẮNG SÁNG & SẮP XẾP GỌN GÀNG ---
 st.markdown("""
     <style>
         .main .block-container {
             padding-top: 1rem;
         }
         
-        /* Thanh Menu Ngang tông xanh lá đồng bộ với website */
+        /* Thanh Menu Ngang */
         .top-nav {
             background-color: #1b5e20;
             border-radius: 8px;
@@ -53,8 +60,8 @@ st.markdown("""
         }
         .nav-link-custom {
             display: block;
-            padding: 12px 20px;
-            color: #ffffff;
+            padding: 12px 18px;
+            color: #ffffff !important; /* Màu chữ trắng sáng để dễ đọc, không bị chìm */
             text-decoration: none;
             font-weight: bold;
             font-size: 15px;
@@ -64,13 +71,13 @@ st.markdown("""
         }
         .nav-link-custom:hover {
             background-color: #2e7d32;
-            color: #ffffff;
+            color: #ffffff !important;
         }
-        /* Hiệu ứng làm nổi bật mục đang chọn (Active) đúng lớp */
+        /* Mục đang được chọn (Active) */
         .nav-link-custom.active {
-            background-color: #2e7d32;
-            color: #ffffff;
-            border-bottom: 3px solid #a5d6a7;
+            background-color: #2e7d32 !important;
+            color: #ffffff !important;
+            border-bottom: 3px solid #ffeb3b; /* Viền vàng nổi bật giúp nhận biết ngay */
         }
 
         /* Khung ô chọn đề nổi bật */
@@ -138,7 +145,7 @@ with st.sidebar:
 
 # ==================== KHU VỰC CHÍNH BÊN PHẢI ====================
 if classes:
-    # --- THANH MENU NGANG CHỌN LỚP ---
+    # --- THANH MENU NGANG SẮP XẾP TỪ LỚP 6 ĐẾN 12 ---
     nav_html = '<nav class="top-nav"><ul class="nav-list">'
     for cls in classes:
         active_class = "active" if st.session_state.selected_class == cls else ""
