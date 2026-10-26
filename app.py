@@ -6,17 +6,38 @@ import base64
 # Cấu hình trang rộng
 st.set_page_config(page_title="Top Giáo Dục - Lớp Toán Thầy Lộc", layout="wide")
 
-# --- MÃ CSS TÙY CHỈNH: MENU NGANG TOANMATH & GIAO DIỆN ---
+# Lấy đường dẫn thư mục hiện tại
+current_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in locals() else "."
+ROOT_DIR = current_dir
+
+# Quét danh sách các lớp từ thư mục
+classes = []
+if os.path.exists(ROOT_DIR):
+    classes = sorted([f for f in os.listdir(ROOT_DIR) if os.path.isdir(os.path.join(ROOT_DIR, f)) and not f.startswith('.') and f != "__pycache__"])
+
+# --- 1. XỬ LÝ QUERY PARAMS NGAY TỪ ĐẦU ĐỂ CẬP NHẬT ĐÚNG LỚP ĐANG CHỌN ---
+if "selected_class" not in st.session_state:
+    st.session_state.selected_class = classes[0] if classes else ""
+
+query_params = st.query_params
+if "class" in query_params:
+    requested_class = query_params["class"]
+    if requested_class in classes:
+        st.session_state.selected_class = requested_class
+
+if not st.session_state.selected_class and classes:
+    st.session_state.selected_class = classes[0]
+
+# --- MÃ CSS TÙY CHỈNH: ĐỒNG BỘ MÀU XANH LÁ CHỦ ĐẠO & ACTIVE CHUẨN ---
 st.markdown("""
     <style>
-        /* Ẩn header mặc định của Streamlit nếu muốn gọn hơn (tùy chọn) */
         .main .block-container {
             padding-top: 1rem;
         }
         
-        /* Thanh Menu Ngang phong cách TOANMATH */
+        /* Thanh Menu Ngang tông xanh lá đồng bộ với website */
         .top-nav {
-            background-color: #222222;
+            background-color: #1b5e20;
             border-radius: 8px;
             padding: 0 15px;
             margin-bottom: 25px;
@@ -41,9 +62,15 @@ st.markdown("""
             border-radius: 4px;
             transition: all 0.2s ease;
         }
-        .nav-link-custom:hover, .nav-link-custom.active {
-            background-color: #e53935;
+        .nav-link-custom:hover {
+            background-color: #2e7d32;
             color: #ffffff;
+        }
+        /* Hiệu ứng làm nổi bật mục đang chọn (Active) đúng lớp */
+        .nav-link-custom.active {
+            background-color: #2e7d32;
+            color: #ffffff;
+            border-bottom: 3px solid #a5d6a7;
         }
 
         /* Khung ô chọn đề nổi bật */
@@ -68,22 +95,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Lấy đường dẫn thư mục hiện tại
-current_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in locals() else "."
-ROOT_DIR = current_dir
-
-# Quét danh sách các lớp từ thư mục
-classes = []
-if os.path.exists(ROOT_DIR):
-    classes = sorted([f for f in os.listdir(ROOT_DIR) if os.path.isdir(os.path.join(ROOT_DIR, f)) and not f.startswith('.') and f != "__pycache__"])
-
-# Xử lý trạng thái lớp đang chọn thông qua query params hoặc session_state
-if "selected_class" not in st.session_state:
-    st.session_state.selected_class = classes[0] if classes else ""
-
-# ==================== THANH BÊN (SIDEBAR - DÙNG ĐỂ UPLOAD & LOGO) ====================
+# ==================== THANH BÊN (SIDEBAR - UPLOAD & LOGO) ====================
 with st.sidebar:
-    # --- TỰ ĐỘNG TÌM VÀ XÓA NỀN TRẮNG LOGO ---
     logo_path = None
     for file in os.listdir(current_dir):
         if file.lower().startswith("logo"):
@@ -125,7 +138,7 @@ with st.sidebar:
 
 # ==================== KHU VỰC CHÍNH BÊN PHẢI ====================
 if classes:
-    # --- THANH MENU NGANG CHỌN LỚP (GIỐNG TOANMATH) ---
+    # --- THANH MENU NGANG CHỌN LỚP ---
     nav_html = '<nav class="top-nav"><ul class="nav-list">'
     for cls in classes:
         active_class = "active" if st.session_state.selected_class == cls else ""
@@ -133,19 +146,9 @@ if classes:
     nav_html += '</ul></nav>'
     st.markdown(nav_html, unsafe_allow_html=True)
 
-    # Đọc lại lớp được chọn từ URL hoặc session state
-    query_params = st.query_params
-    if "class" in query_params:
-        requested_class = query_params["class"]
-        if requested_class in classes:
-            st.session_state.selected_class = requested_class
-
     selected_class = st.session_state.selected_class
-    if not selected_class or selected_class not in classes:
-        selected_class = classes[0]
-        st.session_state.selected_class = selected_class
-
     class_path = os.path.join(ROOT_DIR, selected_class)
+    
     if os.path.exists(class_path):
         pdf_files = sorted([f for f in os.listdir(class_path) if f.lower().endswith('.pdf')])
         
