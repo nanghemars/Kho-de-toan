@@ -22,18 +22,17 @@ if os.path.exists(ROOT_DIR):
     raw_classes = [f for f in os.listdir(ROOT_DIR) if os.path.isdir(os.path.join(ROOT_DIR, f)) and not f.startswith('.') and f != "__pycache__"]
     classes = sorted(raw_classes, key=sort_class_key)
 
-# --- XỬ LÝ QUERY PARAMS CHO LỚP ĐANG CHỌN ---
-if "selected_class" not in st.session_state:
-    st.session_state.selected_class = classes[0] if classes else ""
-
+# --- XỬ LÝ QUERY PARAMS CHO LỚP ĐANG CHỌN (ƯU TIÊN URL TRƯỚC TIÊN) ---
 query_params = st.query_params
-if "class" in query_params:
-    requested_class = query_params["class"]
-    if requested_class in classes:
-        st.session_state.selected_class = requested_class
+requested_class = query_params.get("class", None)
 
-if not st.session_state.selected_class and classes:
-    st.session_state.selected_class = classes[0]
+if requested_class and requested_class in classes:
+    # Nếu trên URL có truyền class hợp lệ, ưu tiên dùng nó
+    st.session_state.selected_class = requested_class
+else:
+    # Nếu không có trên URL, kiểm tra session_state, nếu chưa có thì lấy lớp đầu tiên
+    if "selected_class" not in st.session_state or st.session_state.selected_class not in classes:
+        st.session_state.selected_class = classes[0] if classes else ""
 
 # --- MÃ CSS: ĐỔI MÀU CHỮ TRẮNG SÁNG & SẮP XẾP GỌN GÀNG ---
 st.markdown("""
@@ -145,7 +144,7 @@ with st.sidebar:
 
 # ==================== KHU VỰC CHÍNH BÊN PHẢI ====================
 if classes:
-    # --- THANH MENU NGANG (ĐÃ THÊM target="_self" ĐỂ MỞ TRÊN CÙNG 1 TAB) ---
+    # --- THANH MENU NGANG ---
     nav_html = '<nav class="top-nav"><ul class="nav-list">'
     for cls in classes:
         active_class = "active" if st.session_state.selected_class == cls else ""
