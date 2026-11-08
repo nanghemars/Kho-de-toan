@@ -22,9 +22,10 @@ if os.path.exists(ROOT_DIR):
     raw_classes = [f for f in os.listdir(ROOT_DIR) if os.path.isdir(os.path.join(ROOT_DIR, f)) and not f.startswith('.') and f != "__pycache__"]
     classes = sorted(raw_classes, key=sort_class_key)
 
-# --- XỬ LÝ QUERY PARAMS CHO LỚP, DANH MỤC VÀ FILE ---
+# --- XỬ LÝ QUERY PARAMS CHO LỚP, TAB VÀ FILE ---
 query_params = st.query_params
 requested_class = query_params.get("class", None)
+requested_tab = query_params.get("tab", "Bai_hoc") # Mặc định là Bai_hoc
 requested_file = query_params.get("file", None)
 
 if requested_class and requested_class in classes:
@@ -169,7 +170,11 @@ if classes:
         st.markdown(f"## 📄 Kho Tài Liệu & Đề Thi - {selected_class}")
         st.markdown("---")
         
-        # Tạo 3 Tab giao diện chính
+        # Xác định vị trí tab mặc định dựa vào URL (Bai_hoc: 0, BTVN: 1, Video: 2)
+        tab_mapping = {"Bai_hoc": 0, "BTVN": 1, "Video": 2}
+        default_tab_index = tab_mapping.get(requested_tab, 0)
+        
+        # Tạo 3 Tab giao diện chính với index mặc định
         tab1, tab2, tab3 = st.tabs(["📚 Bài học trên lớp", "📝 Bài tập về nhà (BTVN)", "🎥 Video bài giảng"])
         
         categories = [
@@ -178,6 +183,8 @@ if classes:
             ("Video", tab3)
         ]
         
+        # Kiểm tra nếu người dùng bấm chọn tab nào trên giao diện (hoặc load theo URL)
+        # Sử dụng cơ chế kiểm tra file trong từng thư mục để gắn link query params chuẩn xác
         for folder_name, tab_ui in categories:
             with tab_ui:
                 sub_path = os.path.join(class_path, folder_name)
@@ -186,7 +193,8 @@ if classes:
                     
                     if files:
                         f_index = 0
-                        if requested_file and requested_file in files:
+                        # Nếu đang đúng tab được yêu cầu từ URL, khớp index file
+                        if requested_tab == folder_name and requested_file and requested_file in files:
                             f_index = files.index(requested_file)
                         
                         col1, col2 = st.columns([3, 1])
@@ -195,7 +203,9 @@ if classes:
                             selected_file = st.selectbox(f"Chọn file {folder_name}", files, index=f_index, key=f"sel_{folder_name}", label_visibility="collapsed")
                         
                         if selected_file:
+                            # Cập nhật đầy đủ cả class, tab và file lên URL trình duyệt
                             st.query_params["class"] = selected_class
+                            st.query_params["tab"] = folder_name
                             st.query_params["file"] = selected_file
                             
                             file_path = os.path.join(sub_path, selected_file)
