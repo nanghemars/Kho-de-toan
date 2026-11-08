@@ -22,9 +22,10 @@ if os.path.exists(ROOT_DIR):
     raw_classes = [f for f in os.listdir(ROOT_DIR) if os.path.isdir(os.path.join(ROOT_DIR, f)) and not f.startswith('.') and f != "__pycache__"]
     classes = sorted(raw_classes, key=sort_class_key)
 
-# --- XỬ LÝ QUERY PARAMS CHO LỚP VÀ FILE ĐANG CHỌN ---
+# --- XỬ LÝ QUERY PARAMS CHO LỚP, DANH MỤC VÀ FILE ---
 query_params = st.query_params
 requested_class = query_params.get("class", None)
+requested_tab = query_params.get("tab", None)
 requested_file = query_params.get("file", None)
 
 if requested_class and requested_class in classes:
@@ -33,7 +34,7 @@ else:
     if "selected_class" not in st.session_state or st.session_state.selected_class not in classes:
         st.session_state.selected_class = classes[0] if classes else ""
 
-# --- MÃ CSS ---
+# --- MÃ CSS GIAO DIỆN ---
 st.markdown("""
     <style>
         .main .block-container {
@@ -121,32 +122,39 @@ with st.sidebar:
     st.markdown("### 📥 Thêm tài liệu mới")
     if classes:
         st.write("Chọn lớp muốn đưa file vào:")
-        # Đồng bộ selectbox upload theo lớp hiện tại
         current_selected = st.session_state.get("selected_class", classes[0])
         default_index = classes.index(current_selected) if current_selected in classes else 0
         
         upload_class = st.selectbox("Chọn lớp upload", classes, index=default_index, key="up_class", label_visibility="collapsed")
         
-        uploaded_file = st.file_uploader("Chọn file từ máy tính:", type=['pdf', 'docx', 'pptx'], label_visibility="collapsed")
+        # Chọn mục nhỏ cần upload
+        upload_category = st.selectbox("Chọn mục:", ["Bài học trên lớp", "Bài tập về nhà (BTVN)", "Video bài giảng"], key="up_cat")
+        cat_folder_map = {
+            "Bài học trên lớp": "Bai_hoc",
+            "Bài tập về nhà (BTVN)": "BTVN",
+            "Video bài giảng": "Video"
+        }
+        sub_folder_name = cat_folder_map[upload_category]
+
+        uploaded_file = st.file_uploader("Chọn file từ máy tính:", type=['pdf', 'docx', 'pptx', 'mp4'], label_visibility="collapsed")
         
         if uploaded_file is not None:
-            upload_path = os.path.join(ROOT_DIR, upload_class)
+            upload_path = os.path.join(ROOT_DIR, upload_class, sub_folder_name)
             if not os.path.exists(upload_path):
                 os.makedirs(upload_path)
             with open(os.path.join(upload_path, uploaded_file.name), "wb") as f:
                 f.write(uploaded_file.getbuffer())
-            st.success(f"Đã tải lên: {uploaded_file.name}")
+            st.success(f"Đã tải lên mục {upload_category}: {uploaded_file.name}")
             st.rerun()
     else:
         st.info("Chưa có thư mục lớp học nào.")
 
 # ==================== KHU VỰC CHÍNH BÊN PHẢI ====================
 if classes:
-    # --- THANH MENU NGANG ---
+    # --- THANH MENU NGANG CHỌN LỚP ---
     nav_html = '<nav class="top-nav"><ul class="nav-list">'
     for cls in classes:
         active_class = "active" if st.session_state.selected_class == cls else ""
-        # Khi click vào menu lớp, giữ nguyên lớp nhưng không ép buộc file cũ để nó tự nhận file đầu tiên của lớp đó
         nav_html += f'<li><a href="?class={urllib.parse.quote(cls)}" target="_self" class="nav-link-custom {active_class}">📚 {cls}</a></li>'
     nav_html += '</ul></nav>'
     st.markdown(nav_html, unsafe_allow_html=True)
@@ -155,58 +163,77 @@ if classes:
     class_path = os.path.join(ROOT_DIR, selected_class)
     
     if os.path.exists(class_path):
-        pdf_files = sorted([f for f in os.listdir(class_path) if f.lower().endswith('.pdf')])
+        st.markdown(f"## 📄 Kho Tài Liệu & Đề Thi - {selected_class}")
+        st.markdown("---")
         
-        if pdf_files:
-            st.markdown(f"## 📄 Kho Tài Liệu & Đề Thi - {selected_class}")
-            st.markdown("---")
-            
-            # Xác định index của file nếu có trên URL
-            file_index = 0
-            if requested_file and requested_file in pdf_files:
-                file_index = pdf_files.index(requested_file)
-            
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                st.markdown('<p class="select-label">📄 Chọn đề kiểm tra / bài giảng cần xem:</p>', unsafe_allow_html=True)
-                selected_pdf = st.selectbox("Chọn đề", pdf_files, index=file_index, label_visibility="collapsed")
-            
-            # Nếu người dùng thay đổi selectbox chọn đề trên giao diện, cập nhật lại URL ngay lập tức mà không cần reload thủ công
-            if selected_pdf != requested_file:
-                st.query_params["class"] = selected_class
-                st.query_params["file"] = selected_pdf
-
-            if selected_pdf:
-                file_path = os.path.join(class_path, selected_pdf)
-                
-                with col2:
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    with open(file_path, "rb") as f:
-                        st.download_button(
-                            label="📥 Tải file về máy",
-                            data=f,
-                            file_name=selected_pdf,
-                            mime="application/octet-stream",
-                            use_container_width=True
-                        )
-                
-                st.markdown("---")
-                
-                # Tạo link GitHub Raw
-                encoded_class = urllib.parse.quote(selected_class)
-                encoded_pdf = urllib.parse.quote(selected_pdf)
-                pdf_url = f"https://raw.githubusercontent.com/nanghemars/Kho-de-toan/main/{encoded_class}/{encoded_pdf}"
-                
-                # --- TRÌNH XEM PDF.JS ---
-                pdfjs_url = f"https://mozilla.github.io/pdf.js/web/viewer.html?file={urllib.parse.quote(pdf_url)}"
-                
-                pdf_display = f'''
-                    <div style="width: 100%; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; overflow: hidden;">
-                        <iframe src="{pdfjs_url}" width="100%" height="850px" style="border: none;"></iframe>
-                    </div>
-                '''
-                st.markdown(pdf_display, unsafe_allow_html=True)
-        else:
-            st.info(f"📂 Thư mục **{selected_class}** hiện chưa có file PDF nào.")
+        # Tạo 3 Tab giao diện chính
+        tab1, tab2, tab3 = st.tabs(["📚 Bài học trên lớp", "📝 Bài tập về nhà (BTVN)", "🎥 Video bài giảng"])
+        
+        categories = [
+            ("Bai_hoc", tab1),
+            ("BTVN", tab2),
+            ("Video", tab3)
+        ]
+        
+        for folder_name, tab_ui in categories:
+            with tab_ui:
+                sub_path = os.path.join(class_path, folder_name)
+                if os.path.exists(sub_path):
+                    files = sorted([f for f in os.listdir(sub_path) if not f.startswith('.')])
+                    
+                    if files:
+                        # Xác định file nếu khớp URL
+                        f_index = 0
+                        if requested_file and requested_file in files:
+                            f_index = files.index(requested_file)
+                        
+                        col1, col2 = st.columns([3, 1])
+                        with col1:
+                            st.markdown('<p class="select-label">📄 Chọn tài liệu cần xem:</p>', unsafe_allow_html=True)
+                            selected_file = st.selectbox(f"Chọn file {folder_name}", files, index=f_index, key=f"sel_{folder_name}", label_visibility="collapsed")
+                        
+                        # Cập nhật query param tự động
+                        if selected_file:
+                            st.query_params["class"] = selected_class
+                            st.query_params["file"] = selected_file
+                            
+                            file_path = os.path.join(sub_path, selected_file)
+                            
+                            with col2:
+                                st.markdown("<br>", unsafe_allow_html=True)
+                                with open(file_path, "rb") as f:
+                                    st.download_button(
+                                        label="📥 Tải file về máy",
+                                        data=f,
+                                        file_name=selected_file,
+                                        mime="application/octet-stream",
+                                        use_container_width=True,
+                                        key=f"dl_{folder_name}"
+                                    )
+                            
+                            st.markdown("---")
+                            
+                            # Hiển thị nội dung tương ứng (PDF hoặc Video)
+                            encoded_class = urllib.parse.quote(selected_class)
+                            encoded_file = urllib.parse.quote(selected_file)
+                            file_url = f"https://raw.githubusercontent.com/nanghemars/Kho-de-toan/main/{urllib.parse.quote(selected_class)}/{folder_name}/{encoded_file}"
+                            
+                            if selected_file.lower().endswith(('.mp4', '.mov', '.avi')):
+                                st.video(file_path)
+                            else:
+                                # Dùng PDF.js cho file tài liệu
+                                pdfjs_url = f"https://mozilla.github.io/pdf.js/web/viewer.html?file={urllib.parse.quote(file_url)}"
+                                pdf_display = f'''
+                                    <div style="width: 100%; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; overflow: hidden;">
+                                        <iframe src="{pdfjs_url}" width="100%" height="850px" style="border: none;"></iframe>
+                                    </div>
+                                '''
+                                st.markdown(pdf_display, unsafe_allow_html=True)
+                    else:
+                        st.info(f"📂 Thư mục này chưa có tài liệu nào.")
+                else:
+                    st.info(f"📂 Chưa tạo thư mục nội dung cho phần này trên hệ thống.")
+    else:
+        st.warning(f"⚠️ Thư mục **{selected_class}** chưa tồn tại.")
 else:
     st.warning("⚠️ Chưa tìm thấy thư mục lớp học nào trong hệ thống.")
