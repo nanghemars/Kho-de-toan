@@ -25,7 +25,6 @@ if os.path.exists(ROOT_DIR):
 # --- XỬ LÝ QUERY PARAMS CHO LỚP, DANH MỤC VÀ FILE ---
 query_params = st.query_params
 requested_class = query_params.get("class", None)
-requested_tab = query_params.get("tab", None)
 requested_file = query_params.get("file", None)
 
 if requested_class and requested_class in classes:
@@ -127,7 +126,6 @@ with st.sidebar:
         
         upload_class = st.selectbox("Chọn lớp upload", classes, index=default_index, key="up_class", label_visibility="collapsed")
         
-        # Chọn mục nhỏ cần upload
         upload_category = st.selectbox("Chọn mục:", ["Bài học trên lớp", "Bài tập về nhà (BTVN)", "Video bài giảng"], key="up_cat")
         cat_folder_map = {
             "Bài học trên lớp": "Bai_hoc",
@@ -166,7 +164,7 @@ if classes:
         st.markdown(f"## 📄 Kho Tài Liệu & Đề Thi - {selected_class}")
         st.markdown("---")
         
-        # Tạo 3 Tab giao diện chính
+        # Tạo 3 Tab giao diện chính áp dụng chung cho tất cả các lớp
         tab1, tab2, tab3 = st.tabs(["📚 Bài học trên lớp", "📝 Bài tập về nhà (BTVN)", "🎥 Video bài giảng"])
         
         categories = [
@@ -182,7 +180,6 @@ if classes:
                     files = sorted([f for f in os.listdir(sub_path) if not f.startswith('.')])
                     
                     if files:
-                        # Xác định file nếu khớp URL
                         f_index = 0
                         if requested_file and requested_file in files:
                             f_index = files.index(requested_file)
@@ -192,7 +189,6 @@ if classes:
                             st.markdown('<p class="select-label">📄 Chọn tài liệu cần xem:</p>', unsafe_allow_html=True)
                             selected_file = st.selectbox(f"Chọn file {folder_name}", files, index=f_index, key=f"sel_{folder_name}", label_visibility="collapsed")
                         
-                        # Cập nhật query param tự động
                         if selected_file:
                             st.query_params["class"] = selected_class
                             st.query_params["file"] = selected_file
@@ -213,15 +209,12 @@ if classes:
                             
                             st.markdown("---")
                             
-                            # Hiển thị nội dung tương ứng (PDF hoặc Video)
-                            encoded_class = urllib.parse.quote(selected_class)
                             encoded_file = urllib.parse.quote(selected_file)
                             file_url = f"https://raw.githubusercontent.com/nanghemars/Kho-de-toan/main/{urllib.parse.quote(selected_class)}/{folder_name}/{encoded_file}"
                             
                             if selected_file.lower().endswith(('.mp4', '.mov', '.avi')):
                                 st.video(file_path)
                             else:
-                                # Dùng PDF.js cho file tài liệu
                                 pdfjs_url = f"https://mozilla.github.io/pdf.js/web/viewer.html?file={urllib.parse.quote(file_url)}"
                                 pdf_display = f'''
                                     <div style="width: 100%; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; overflow: hidden;">
