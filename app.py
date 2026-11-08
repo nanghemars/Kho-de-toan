@@ -22,26 +22,23 @@ if os.path.exists(ROOT_DIR):
     raw_classes = [f for f in os.listdir(ROOT_DIR) if os.path.isdir(os.path.join(ROOT_DIR, f)) and not f.startswith('.') and f != "__pycache__"]
     classes = sorted(raw_classes, key=sort_class_key)
 
-# --- XỬ LÝ QUERY PARAMS CHO LỚP ĐANG CHỌN (ƯU TIÊN URL TRƯỚC TIÊN) ---
+# --- XỬ LÝ QUERY PARAMS CHO LỚP VÀ FILE ĐANG CHỌN ---
 query_params = st.query_params
 requested_class = query_params.get("class", None)
+requested_file = query_params.get("file", None)
 
 if requested_class and requested_class in classes:
-    # Nếu trên URL có truyền class hợp lệ, ưu tiên dùng nó
     st.session_state.selected_class = requested_class
 else:
-    # Nếu không có trên URL, kiểm tra session_state, nếu chưa có thì lấy lớp đầu tiên
     if "selected_class" not in st.session_state or st.session_state.selected_class not in classes:
         st.session_state.selected_class = classes[0] if classes else ""
 
-# --- MÃ CSS: ĐỔI MÀU CHỮ TRẮNG SÁNG & SẮP XẾP GỌN GÀNG ---
+# --- MÃ CSS ---
 st.markdown("""
     <style>
         .main .block-container {
             padding-top: 1rem;
         }
-        
-        /* Thanh Menu Ngang */
         .top-nav {
             background-color: #1b5e20;
             border-radius: 8px;
@@ -60,7 +57,7 @@ st.markdown("""
         .nav-link-custom {
             display: block;
             padding: 12px 18px;
-            color: #ffffff !important; /* Màu chữ trắng sáng để dễ đọc */
+            color: #ffffff !important;
             text-decoration: none;
             font-weight: bold;
             font-size: 15px;
@@ -72,14 +69,11 @@ st.markdown("""
             background-color: #2e7d32;
             color: #ffffff !important;
         }
-        /* Mục đang được chọn (Active) */
         .nav-link-custom.active {
             background-color: #2e7d32 !important;
             color: #ffffff !important;
-            border-bottom: 3px solid #ffeb3b; /* Viền vàng nổi bật */
+            border-bottom: 3px solid #ffeb3b;
         }
-
-        /* Khung ô chọn đề nổi bật */
         div[data-testid="stSelectbox"] > div {
             border: 2px solid #2e7d32 !important;
             border-radius: 10px !important;
@@ -121,13 +115,17 @@ with st.sidebar:
             unsafe_allow_html=True
         )
     else:
-        st.warning("⚠️ Không tìm thấy file logo bắt đầu bằng chữ 'logo'.")
+        st.warning("⚠️ Không tìm thấy file logo.")
     
     st.markdown("---")
     st.markdown("### 📥 Thêm tài liệu mới")
     if classes:
         st.write("Chọn lớp muốn đưa file vào:")
-        upload_class = st.selectbox("Chọn lớp upload", classes, key="up_class", label_visibility="collapsed")
+        # Đồng bộ selectbox upload theo lớp hiện tại
+        current_selected = st.session_state.get("selected_class", classes[0])
+        default_index = classes.index(current_selected) if current_selected in classes else 0
+        
+        upload_class = st.selectbox("Chọn lớp upload", classes, index=default_index, key="up_class", label_visibility="collapsed")
         
         uploaded_file = st.file_uploader("Chọn file từ máy tính:", type=['pdf', 'docx', 'pptx'], label_visibility="collapsed")
         
@@ -140,7 +138,7 @@ with st.sidebar:
             st.success(f"Đã tải lên: {uploaded_file.name}")
             st.rerun()
     else:
-        st.info("Chưa có thư mục lớp học nào trong hệ thống.")
+        st.info("Chưa có thư mục lớp học nào.")
 
 # ==================== KHU VỰC CHÍNH BÊN PHẢI ====================
 if classes:
@@ -148,6 +146,7 @@ if classes:
     nav_html = '<nav class="top-nav"><ul class="nav-list">'
     for cls in classes:
         active_class = "active" if st.session_state.selected_class == cls else ""
+        # Khi click vào menu lớp, giữ nguyên lớp nhưng không ép buộc file cũ để nó tự nhận file đầu tiên của lớp đó
         nav_html += f'<li><a href="?class={urllib.parse.quote(cls)}" target="_self" class="nav-link-custom {active_class}">📚 {cls}</a></li>'
     nav_html += '</ul></nav>'
     st.markdown(nav_html, unsafe_allow_html=True)
@@ -162,11 +161,21 @@ if classes:
             st.markdown(f"## 📄 Kho Tài Liệu & Đề Thi - {selected_class}")
             st.markdown("---")
             
+            # Xác định index của file nếu có trên URL
+            file_index = 0
+            if requested_file and requested_file in pdf_files:
+                file_index = pdf_files.index(requested_file)
+            
             col1, col2 = st.columns([3, 1])
             with col1:
                 st.markdown('<p class="select-label">📄 Chọn đề kiểm tra / bài giảng cần xem:</p>', unsafe_allow_html=True)
-                selected_pdf = st.selectbox("Chọn đề", pdf_files, label_visibility="collapsed")
+                selected_pdf = st.selectbox("Chọn đề", pdf_files, index=file_index, label_visibility="collapsed")
             
+            # Nếu người dùng thay đổi selectbox chọn đề trên giao diện, cập nhật lại URL ngay lập tức mà không cần reload thủ công
+            if selected_pdf != requested_file:
+                st.query_params["class"] = selected_class
+                st.query_params["file"] = selected_pdf
+
             if selected_pdf:
                 file_path = os.path.join(class_path, selected_pdf)
                 
