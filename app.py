@@ -22,6 +22,14 @@ if os.path.exists(ROOT_DIR):
     raw_classes = [f for f in os.listdir(ROOT_DIR) if os.path.isdir(os.path.join(ROOT_DIR, f)) and not f.startswith('.') and f != "__pycache__"]
     classes = sorted(raw_classes, key=sort_class_key)
 
+# TỰ ĐỘNG TẠO SẴN 3 THƯ MỤC CON CHO TẤT CẢ CÁC LỚP ĐỂ KHÔNG BỊ LỖI THIẾU THƯ MỤC
+for cls in classes:
+    cls_path = os.path.join(ROOT_DIR, cls)
+    for sub_folder in ["Bai_hoc", "BTVN", "Video"]:
+        sub_path = os.path.join(cls_path, sub_folder)
+        if not os.path.exists(sub_path):
+            os.makedirs(sub_path, exist_ok=True)
+
 # --- XỬ LÝ QUERY PARAMS CHO LỚP, TAB VÀ FILE ---
 query_params = st.query_params
 requested_class = query_params.get("class", None)
