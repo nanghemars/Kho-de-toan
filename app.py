@@ -33,6 +33,11 @@ else:
     if "selected_class" not in st.session_state or st.session_state.selected_class not in classes:
         st.session_state.selected_class = classes[0] if classes else ""
 
+# Đồng bộ lại query params nếu có sự lệch pha
+if "selected_class" in st.session_state and st.query_params.get("class") != st.session_state.selected_class:
+    st.query_params.clear()
+    st.query_params["class"] = st.session_state.selected_class
+
 # --- MÃ CSS GIAO DIỆN ---
 st.markdown("""
     <style>
@@ -164,7 +169,7 @@ if classes:
         st.markdown(f"## 📄 Kho Tài Liệu & Đề Thi - {selected_class}")
         st.markdown("---")
         
-        # Tạo 3 Tab giao diện chính áp dụng chung cho tất cả các lớp
+        # Tạo 3 Tab giao diện chính
         tab1, tab2, tab3 = st.tabs(["📚 Bài học trên lớp", "📝 Bài tập về nhà (BTVN)", "🎥 Video bài giảng"])
         
         categories = [
